@@ -10,17 +10,14 @@ typedef enum {
     INVALID_ARGUMENTS
 } StatusCode;
 
-// Функция проверки на наличие '\0' в подстроке
 int validate_substring(const char *substring) {
-    // Проверяем каждую позицию в строке
     for (int i = 0; substring[i] != '\0'; i++) {
-        // Проверяем, если текущий символ - '\' и следующий символ - '0'
         if (substring[i] == '\\' && substring[i + 1] == '0') {
             printf("Error: недопустимая последовательность '\\0'\n");
-            return 0; // Возвращаем 0 (недопустимо)
+            return 0;
         }
     }
-    return 1; // Возвращаем 1 (допустимо)
+    return 1;
 }
 
 void computeLPSArray(const char *substring, int M, int *lps) {
@@ -45,11 +42,11 @@ void KMPSearch(const char *substring, FILE *file, const char *filename) {
     int lps[M];
     computeLPSArray(substring, M, lps);
 
-    int i = 0;  // Индекс символа в строке
-    int j = 0;  // Индекс символа в подстроке
-    int line_number = 1; // Счетчик строк
+    int i = 0;
+    int j = 0;
+    int line_number = 1;
     char buffer[1024];
-    int found = 0; // Флаг для проверки, было ли найдено хотя бы одно вхождение
+    int found = 0;
 
     while (fgets(buffer, sizeof(buffer), file)) {
         int len = strlen(buffer);
@@ -62,8 +59,8 @@ void KMPSearch(const char *substring, FILE *file, const char *filename) {
 
             if (j == M) {
                 printf("in %s line %d pos %d\n", filename, line_number, k - M + 2);
-                found = 1; // Устанавливаем флаг, что вхождение найдено
-                j = lps[j - 1]; // Продолжаем искать дальше
+                found = 1; //
+                j = lps[j - 1]; // дальше ищем
             }
 
             if (buffer[k] == '\n') {
