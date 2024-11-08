@@ -1,0 +1,6 @@
+John Smith Robert 15.03.1985 M 3500.50
+Emily Johnson Anne 22.07.1990 W 2800.75
+Michael Brown 03.12.1977 M 4300.00
+Ava Martinez 19.03.1991 W 2700.00
+Andrew Robinson 11.07.1986 M 4100.00
+Mia Clark 24.11.1989 W 3400.00

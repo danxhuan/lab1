@@ -1,401 +1,407 @@
-#include "5.h"
+#include "7.h"
+#include "7.c"
 
-
-int to_what_stream(FILE *output_file, FILE **stream, const char **MSG) {
-	//  куда вывод?
+int FindLiver(Node** head, const char* MSG[]) {
+	Liver liver;
+	error_msg errorMsg;
+	int n;
+	errorMsg = create_liver(&liver);
+	if (errorMsg) {
+		clear_buffer();
+		return errorMsg;
+	}
 	printf("%s", MSG[3]);
-	char format[10];
-	int n = scanf("%s", format);
-	if (n == 0 || (!string_cmp(format, "0") && !string_cmp(format, "1"))) {
-		printf("%s", MSG[2]);
-		clear_buffer();
+	n = read_liver(stdin, &liver);
+	if (n != 6 || !IsCorrectNameLastName(&(liver.name)) || !IsCorrectNameLastName(&(liver.last_name)) ||
+	    !IsCorrectNameLastName(&(liver.patronymic)) || !IsCorrectDate(&(liver.birthday)) ||
+	    (liver.gender != 'W' && liver.gender != 'M')) {
+		printf("%s", MSG[7]);
+		destroy_liver(&liver);
 		return -1;
-	} else if (string_cmp(format, "1")) {
-		// в трассировочный файл
-		*stream = output_file;
 	}
-	return 0;
+
+	Node* find_liver = find(head, &liver);
+	if (!find_liver) {
+		printf("%s", MSG[7]);
+		destroy_liver(&liver);
+		return -1;
+	}
+	print_liver(stdout, &(find_liver->data));
+	destroy_liver(&liver);
+	return SUCCESS;
 }
 
-int find_by_name(FILE *output_file, String *command, Students *students, const char **MSG) {
-	int n;
+int DeleteLiver(Node** head, const char* MSG[], SpecialNode** head_stack) {
+	Liver liver;
 	error_msg errorMsg;
-	// Куда выводить
-	FILE *stream = stdout;
-	int what_stream = to_what_stream(output_file, &stream, MSG);
-	if (what_stream == -1) {
-		return -1;
-	}
-	String name;
-
-	IntVector *result = create_int_vector(1);
-	if (!result) {
-		destroy_string(command);
-		fclose(output_file);
-		destroy_students(students);
-		return print_error(MEMORY_ALLOCATED_ERROR);
-	}
-	errorMsg = create_string(&name, "");
+	int n;
+	errorMsg = create_liver(&liver);
 	if (errorMsg) {
-		destroy_string(command);
-		fclose(output_file);
-		destroy_students(students);
-		destroy_int_vector(result);
-		return print_error(errorMsg);
-	}
-
-	getc(stdin);
-	printf("Write name: ");
-	n = read_string(stdin, &name);
-	if (n == 0) {
-		printf("%s", MSG[2]);
 		clear_buffer();
+		return errorMsg;
+	}
+	printf("%s", MSG[3]);
+	n = read_liver(stdin, &liver);
+	if (n != 6 || !IsCorrectNameLastName(&(liver.name)) || !IsCorrectNameLastName(&(liver.last_name)) ||
+	    !IsCorrectNameLastName(&(liver.patronymic)) || !IsCorrectDate(&(liver.birthday)) ||
+	    (liver.gender != 'W' && liver.gender != 'M')) {
+		clear_buffer();
+		printf("%s", MSG[7]);
+		destroy_liver(&liver);
 		return -1;
 	}
-	n = find_students_by_name(students, result, &name);
-	int index;
-	for (int i = 0; i < n; ++i) {
-		errorMsg = get_intvector(result, i, &index);
-		if (errorMsg) {
-			destroy_string(command);
-			fclose(output_file);
-			destroy_students(students);
-			destroy_int_vector(result);
-			destroy_string(&name);
-			return print_error(errorMsg);
-		}
-		print_student(stream, &((*students).students[index]));
-	}
-	destroy_string(&name);
-	destroy_int_vector(result);
-	return 0;
-}
-
-int find_by_last_name(FILE *output_file, String *command, Students *students, const char **MSG) {
-	int n;
-	error_msg errorMsg;
-	// Куда выводить
-	FILE *stream = stdout;
-	int what_stream = to_what_stream(output_file, &stream, MSG);
-	if (what_stream == -1) {
+	errorMsg = delete_liver(head, &liver);
+	if (errorMsg == INCORRECT_OPTIONS_ERROR) {
+		printf("%s", MSG[7]);
+		destroy_liver(&liver);
 		return -1;
+	} else if (errorMsg) {
+		clear_buffer();
+		printf("%s", MSG[7]);
+		return errorMsg;
 	}
-	String last_name;
-
-	IntVector *result = create_int_vector(1);
-	if (!result) {
-		destroy_string(command);
-		fclose(output_file);
-		destroy_students(students);
-		return print_error(MEMORY_ALLOCATED_ERROR);
-	}
-	errorMsg = create_string(&last_name, "");
+	errorMsg = push_special_node_start(head_stack, liver, 0);
 	if (errorMsg) {
-		destroy_string(command);
-		fclose(output_file);
-		destroy_students(students);
-		destroy_int_vector(result);
-		return print_error(errorMsg);
+		clear_buffer();
+		printf("%s", MSG[7]);
+		return errorMsg;
 	}
 
-	getc(stdin);
-	printf("Write last name: ");
-	n = read_string(stdin, &last_name);
-	if (n == 0) {
-		printf("%s", MSG[2]);
-		clear_buffer();
-		return -1;
-	}
-	n = find_students_by_last_name(students, result, &last_name);
-	int index;
-	for (int i = 0; i < n; ++i) {
-		errorMsg = get_intvector(result, i, &index);
-		if (errorMsg) {
-			destroy_string(command);
-			fclose(output_file);
-			destroy_students(students);
-			destroy_int_vector(result);
-			destroy_string(&last_name);
-			return print_error(errorMsg);
-		}
-		print_student(stream, &((*students).students[index]));
-	}
-	destroy_string(&last_name);
-	destroy_int_vector(result);
-	return 0;
+	return SUCCESS;
 }
 
-int find_by_group(FILE *output_file, String *command, Students *students, const char **MSG) {
-	int n;
+int download_to_file(Node* head, const char* MSG[]) {
 	error_msg errorMsg;
-	// Куда выводить
-	FILE *stream = stdout;
-	int what_stream = to_what_stream(output_file, &stream, MSG);
-	if (what_stream == -1) {
-		return -1;
-	}
-	String group;
-
-	IntVector *result = create_int_vector(1);
-	if (!result) {
-		destroy_string(command);
-		fclose(output_file);
-		destroy_students(students);
-		return print_error(MEMORY_ALLOCATED_ERROR);
-	}
-	errorMsg = create_string(&group, "");
+	String out_filename;
+	errorMsg = create_string(&out_filename, "");
 	if (errorMsg) {
-		destroy_string(command);
-		fclose(output_file);
-		destroy_students(students);
-		destroy_int_vector(result);
-		return print_error(errorMsg);
+		return errorMsg;
 	}
-
-	getc(stdin);
-	printf("Write group: ");
-	n = read_string(stdin, &group);
-	if (n == 0) {
-		printf("%s", MSG[2]);
-		clear_buffer();
-		return -1;
+	printf("%s", MSG[6]);
+	read_string(stdin, &out_filename);
+	FILE* out = fopen(out_filename.arr, "w");
+	if (!out) {
+		destroy_string(&out_filename);
+		return OUTPUT_FILE_ERROR;
 	}
-	n = find_students_by_group(students, result, &group);
-	int index;
-	for (int i = 0; i < n; ++i) {
-		errorMsg = get_intvector(result, i, &index);
-		if (errorMsg) {
-			destroy_string(command);
-			fclose(output_file);
-			destroy_students(students);
-			destroy_int_vector(result);
-			destroy_string(&group);
-			return print_error(errorMsg);
-		}
-		print_student(stream, &((*students).students[index]));
-	}
-	destroy_string(&group);
-	destroy_int_vector(result);
-	return 0;
+	print_LinkedList(out, head, "");
+	destroy_string(&out_filename);
+	fclose(out);
+	return SUCCESS;
 }
 
-int find_good_students(FILE *output_file, String *command, Students *students, const char **MSG) {
-	int n;
+int revert_livers(Node** head, SpecialNode** stack, const int n) {
+	SpecialNode* moving_head = *stack;
 	error_msg errorMsg;
-	// Куда выводить
-	FILE *stream = stdout;
-	int what_stream = to_what_stream(output_file, &stream, MSG);
-	if (what_stream == -1) {
-		return -1;
-	}
-
-	IntVector *result = create_int_vector(1);
-	if (!result) {
-		destroy_string(command);
-		fclose(output_file);
-		destroy_students(students);
-		return print_error(MEMORY_ALLOCATED_ERROR);
-	}
-
-	getc(stdin);
-	n = filter_students_by_average_score(students, result);
-	if (n == 0) {
-		printf("%s", MSG[2]);
-		clear_buffer();
-		return -1;
-	}
-	int index;
-	for (int i = 0; i < n; ++i) {
-		errorMsg = get_intvector(result, i, &index);
-		if (errorMsg) {
-			destroy_string(command);
-			fclose(output_file);
-			destroy_students(students);
-			destroy_int_vector(result);
-			return print_error(errorMsg);
+	Liver new_liver;
+	Liver last_liver;
+	for (int i = 0; i < n / 2 + 1; ++i) {
+		switch (moving_head->instruction) {
+			case 0:
+				errorMsg = copy_liver(&(moving_head->liver), &last_liver);
+				if (errorMsg) {
+					return errorMsg;
+				}
+				errorMsg = push_node_in_correct_order(head, &last_liver);
+				if (errorMsg) {
+					return errorMsg;
+				}
+				break;
+			case 1:
+				errorMsg = delete_liver(head, &(moving_head->liver));
+				if (errorMsg) {
+					return errorMsg;
+				}
+				break;
+			case 2:
+				errorMsg = copy_liver(&(moving_head->liver), &last_liver);
+				if (errorMsg) {
+					return errorMsg;
+				}
+				moving_head = moving_head->next;
+				errorMsg = copy_liver(&(moving_head->liver), &new_liver);
+				if (errorMsg) {
+					destroy_liver(&last_liver);
+					destroy_liver(&new_liver);
+					return errorMsg;
+				}
+				errorMsg = delete_liver(head, &last_liver);
+				if (errorMsg) {
+					destroy_liver(&last_liver);
+					destroy_liver(&new_liver);
+					return errorMsg;
+				}
+				errorMsg = push_node_in_correct_order(head, &new_liver);
+				if (errorMsg) {
+					destroy_liver(&last_liver);
+					return errorMsg;
+				}
+				destroy_liver(&last_liver);
+				break;
+			default:
+				return INCORRECT_OPTIONS_ERROR;
 		}
-		print_student(stream, &((*students).students[index]));
+		moving_head = moving_head->next;
 	}
-	destroy_int_vector(result);
-	return 0;
+	return SUCCESS;
 }
 
-int main(int argc, char **argv) {
-	const char *MSG[] = {"Enter the command:\n",
-	                     "Unrecognized command\n",
-	                     "Incorrect data\n",
-	                     "If tou want to write result in the trace file, write 1or 0\n",
-	                     "If you need help: write help\nYou should write one of these commands:\n",
+int AddLiver(Node** head, const char* MSG[], SpecialNode** stack) {
+	Liver liver;
+	error_msg errorMsg;
+	int n;
+	errorMsg = create_liver(&liver);
+	if (errorMsg) {
+		clear_buffer();
+		return errorMsg;
+	}
+	printf("%s", MSG[3]);
+	n = read_liver(stdin, &liver);
+	if (n != 6 || !IsCorrectNameLastName(&(liver.name)) || !IsCorrectNameLastName(&(liver.last_name)) ||
+	    !IsCorrectNameLastName(&(liver.patronymic)) || !IsCorrectDate(&(liver.birthday)) ||
+	    (liver.gender != 'W' && liver.gender != 'M')) {
+		printf("%s", MSG[7]);
+		destroy_liver(&liver);
+		return -1;
+	}
+	errorMsg = push_node_in_correct_order(head, &liver);
+	if (errorMsg) {
+		destroy_liver(&liver);
+		return errorMsg;
+	}
+
+	Liver liver1;
+	errorMsg = copy_liver(&liver, &liver1);
+	if (errorMsg) {
+		destroy_liver(&liver);
+		return errorMsg;
+	}
+
+	errorMsg = push_special_node_start(stack, liver1, 1);
+	if (errorMsg) {
+		destroy_liver(&liver);
+		destroy_liver(&liver1);
+		return errorMsg;
+	}
+	return SUCCESS;
+}
+
+int Change(Node** head, const char* MSG[], SpecialNode** stack) {
+	Liver old_liver, new_liver;
+	error_msg errorMsg;
+	int n;
+	errorMsg = create_liver(&old_liver);
+	if (errorMsg) {
+		return errorMsg;
+	}
+	printf("%s", MSG[3]);
+	n = read_liver(stdin, &old_liver);
+	if (n != 6 || !IsCorrectNameLastName(&(old_liver.name)) || !IsCorrectNameLastName(&(old_liver.last_name)) ||
+	    !IsCorrectNameLastName(&(old_liver.patronymic)) || !IsCorrectDate(&(old_liver.birthday)) ||
+	    (old_liver.gender != 'W' && old_liver.gender != 'M')) {
+		printf("%s", MSG[7]);
+		destroy_liver(&old_liver);
+		return -1;
+	}
+
+
+	errorMsg = create_liver(&new_liver);
+	if (errorMsg) {
+		destroy_liver(&old_liver);
+		return errorMsg;
+	}
+	printf("%s", MSG[8]);
+	n = read_liver(stdin, &new_liver);
+	if (n != 6 || !IsCorrectNameLastName(&(new_liver.name)) || !IsCorrectNameLastName(&(new_liver.last_name)) ||
+	    !IsCorrectNameLastName(&(new_liver.patronymic)) || !IsCorrectDate(&(new_liver.birthday)) ||
+	    (new_liver.gender != 'W' && new_liver.gender != 'M')) {
+		printf("%s", MSG[7]);
+		destroy_liver(&new_liver);
+		destroy_liver(&old_liver);
+		return -1;
+	}
+
+
+	errorMsg = delete_liver(head, &old_liver);
+	if (errorMsg) {
+		printf("%s", MSG[7]);
+		destroy_liver(&new_liver);
+		destroy_liver(&old_liver);
+		return -1;
+	}
+	errorMsg = push_node_in_correct_order(head, &new_liver);
+	if (errorMsg) {
+		destroy_liver(&new_liver);
+		destroy_liver(&old_liver);
+		return errorMsg;
+	}
+
+	errorMsg = push_special_node_start(stack, old_liver, 2);
+	if (errorMsg) {
+		destroy_liver(&new_liver);
+		destroy_liver(&old_liver);
+		return errorMsg;
+	}
+
+	Liver new_liver_copy;
+	errorMsg = copy_liver(&new_liver, &new_liver_copy);
+	if(errorMsg){
+		destroy_liver(&new_liver);
+		destroy_liver(&old_liver);
+		return errorMsg;
+	}
+
+	errorMsg = push_special_node_start(stack, new_liver_copy, 2);
+	if (errorMsg) {
+		destroy_liver(&new_liver);
+		destroy_liver(&old_liver);
+		return errorMsg;
+	}
+	return SUCCESS;
+}
+
+int main() {
+	const char* MSG[] = {"Write command\n",
+	                     "Incorrect command\n",
+	                     "Write the find liver",
+	                     "Write the liver: ",
+	                     "If you need help, write: help\n",
 	                     "Program can get command with indices\n",
-	                     "Write "};
+	                     "Write filename: ",
+	                     "Incorrect data\n",
+	                     "Write the new liver: "};
+	const char* COMMANDS[] = {"help\n",      "find liver\n", "delete liver\n",        "change liver\n",
+	                          "add liver\n", "undo\n",       "Download to the file\n"};
 
-	const char *COMMAND[] = {"menu\n",          "find by id\n",        "find by name\n", "find by last name\n",
-	                         "find by group\n", "sort by id\n",        "sort by name\n", "sort by last name\n",
-	                         "sort by group\n", "find good students\n", "write"};
-
-	const char *path1;
-	const char *path2;
-	error_msg errorMsg = GetPaths(argc, argv, &path1, &path2);
-
+	// Читаем файл
+	String filename;
+	error_msg errorMsg = create_string(&filename, "");
 	if (errorMsg) {
 		return print_error(errorMsg);
 	}
 
-	FILE *input_file = fopen(path1, "r");
-	if (!input_file) {
+	printf("Write name of input file: ");
+	read_string(stdin, &filename);
+	FILE* in = fopen(filename.arr, "r");
+	if (!in) {
+		destroy_string(&filename);
 		return print_error(INPUT_FILE_ERROR);
 	}
 
-	Students students;
-
-	errorMsg = read_students(input_file, &students);
+	// Записываем все в односвязный список
+	Node* head = NULL;
+	errorMsg = read_livers_from_file(in, &head);
 	if (errorMsg) {
-		fclose(input_file);
+		fclose(in);
+		destroy_string(&filename);
 		return print_error(errorMsg);
 	}
-	fclose(input_file);
+	fclose(in);
+	destroy_string(&filename);
 
-
-
-	FILE *output_file = fopen(path2, "w");
-	if (!output_file) {
-		return print_error(OUTPUT_FILE_ERROR);
-	}
-
+	// Создаем строку команды
+	int count_n = 0;
 	String command;
 	errorMsg = create_string(&command, "");
 	if (errorMsg) {
-		fclose(output_file);
+		destroy_LinkedList(head);
 		return print_error(errorMsg);
 	}
 
+	// Создаем специальный стек для хранения команд
+	SpecialNode* special_stack = NULL;
 
-	// Первое сообщение
-	printf("%s", MSG[4]);
-	for (int i = 0; i < 10; ++i) {
-		printf("%d. %s", i + 1, COMMAND[i]);
-	}
-	printf("%s", MSG[5]);
-
-
+	printf("%s\n", MSG[4]);
 	while (1) {
-		command.size = 0;
+		clear_string(&command);
 		printf("> ");
-		int err = read_line(stdin, &command);
-		if (!err) break;
+		int n = read_line(stdin, &command);
 		if (string_cmp(command.arr, "\n")) {
 			continue;
 		}
-		if (string_cmp(command.arr, COMMAND[0]) || string_cmp(command.arr, "1\n")) {
-			printf("%s", MSG[4]);
-			for (int i = 0; i < 10; ++i) {
-				printf("%d. %s", i + 1, COMMAND[i]);
-			}
-			printf("%s", MSG[5]);
+		if (n == 0) {
+			break;
+		}
 
-			// Поиск по id
-		} else if (string_cmp(command.arr, COMMAND[1]) || string_cmp(command.arr, "2\n")) {
-			// Куда выводить
-			FILE *stream = stdout;
-			int what_stream = to_what_stream(output_file, &stream, MSG);
-			if (what_stream == -1) {
+		if (string_cmp(command.arr, COMMANDS[0]) || string_cmp(command.arr, "1\n")) {
+			printf("You need write one of these commands:\n");
+			for (int i = 0; i < 7; ++i) {
+				printf("%d. %s", i + 1, COMMANDS[i]);
+			}
+		}
+
+		else if (string_cmp(command.arr, COMMANDS[1]) || string_cmp(command.arr, "2\n")) {
+			int er = FindLiver(&head, MSG);
+			if (er == -1) {
 				continue;
+			} else if (er) {
+				destroy_LinkedList_with_special_node(special_stack);
+				destroy_LinkedList(head);
+				destroy_string(&command);
+				return print_error(er);
 			}
+		}else if (string_cmp(command.arr, COMMANDS[2]) || string_cmp(command.arr, "3\n")) {
+			int er = DeleteLiver(&head, MSG, &special_stack);
+			if (er == -1) {
+				continue;
+			} else if (er) {
+				destroy_LinkedList_with_special_node(special_stack);
+				destroy_LinkedList(head);
+				destroy_string(&command);
+				return print_error(er);
+			}
+			count_n += 1;
+		}else if (string_cmp(command.arr, COMMANDS[3]) || string_cmp(command.arr, "4\n")) {
+			int er = Change(&head, MSG, &special_stack);
+			if (er == -1) {
+				continue;
+			} else if (er) {
+				destroy_LinkedList_with_special_node(special_stack);
+				destroy_LinkedList(head);
+				destroy_string(&command);
+				return print_error(er);
+			}
+			count_n += 1;
+		} else if (string_cmp(command.arr, COMMANDS[4]) || string_cmp(command.arr, "5\n")) {
+			int er = AddLiver(&head, MSG, &special_stack);
+			if (er == -1) {
+				continue;
+			} else if (er) {
+				destroy_LinkedList_with_special_node(special_stack);
+				destroy_LinkedList(head);
+				destroy_string(&command);
+				return print_error(er);
+			}
+			count_n += 1;
+		}
 
-			// Получаем id
-			unsigned int required_id;
-			printf("%s%s: ", MSG[6], "id");
-			int n = scanf("%u", &required_id);
-			if (n != 1) {
-				printf("%s", MSG[2]);
+		else if (string_cmp(command.arr, COMMANDS[5]) || string_cmp(command.arr, "6\n")) {
+			errorMsg = revert_livers(&head, &special_stack, count_n);
+			if (errorMsg) {
+				destroy_LinkedList(head);
+				destroy_LinkedList_with_special_node(special_stack);
+				destroy_string(&command);
+				return print_error(errorMsg);
+			}
+			count_n = 0;
+		}
+
+		else if (string_cmp(command.arr, COMMANDS[6]) || string_cmp(command.arr, "7\n")) {
+			errorMsg = download_to_file(head, MSG);
+			if (errorMsg) {
+				destroy_LinkedList_with_special_node(special_stack);
 				clear_buffer();
-				continue;
+				destroy_LinkedList(head);
+				destroy_string(&command);
+				return print_error(errorMsg);
 			}
-			getc(stdin);
-			int index_student = find_student_by_id(&students, required_id);
-
-			// Нет такого
-			if (index_student == -1) {
-				printf("%s", MSG[2]);
-				clear_buffer();
-				continue;
-			}
-			print_student(stream, &(students.students[index_student]));
-			double average_score = calculate_average_score_student(&(students.students[index_student]));
-			fprintf(stream, "Average score: %f\n", average_score);
-			// Поиск имени
-		} else if (string_cmp(command.arr, COMMAND[2]) || string_cmp(command.arr, "3\n")) {
-			int n = find_by_name(output_file, &command, &students, MSG);
-			if (n == -1) continue;
-			if (n != 0) return n;
-			// Поиск фамилии
-
-		} else if (string_cmp(command.arr, COMMAND[3]) || string_cmp(command.arr, "4\n")) {
-			int n = find_by_last_name(output_file, &command, &students, MSG);
-			if (n == -1) continue;
-			if (n != 0) return n;
-			//груп поиск
-		} else if (string_cmp(command.arr, COMMAND[4]) || string_cmp(command.arr, "5\n")) {
-			int n = find_by_group(output_file, &command, &students, MSG);
-			if (n == -1) continue;
-			if (n != 0) return n;
-
-			//    Сортировка по id
-		} else if (string_cmp(command.arr, COMMAND[5]) || string_cmp(command.arr, "6\n")) {
-			// Куда выводить
-			FILE *stream = stdout;
-			int what_stream = to_what_stream(output_file, &stream, MSG);
-			if (what_stream == -1) {
-				continue;
-			}
-			getc(stdin);
-			sort_by_id(&students);
-			print_students(stream, &students);
-			//	Сортировка по имени
-		} else if (string_cmp(command.arr, COMMAND[6]) || string_cmp(command.arr, "7\n")) {
-			// Куда выводить
-			FILE *stream = stdout;
-			int what_stream = to_what_stream(output_file, &stream, MSG);
-			if (what_stream == -1) {
-				continue;
-			}
-			getc(stdin);
-			sort_by_name(&students);
-			print_students(stream, &students);
-			//сортировка по фамилии
-		} else if (string_cmp(command.arr, COMMAND[7]) || string_cmp(command.arr, "8\n")) {
-			// Куда выводить
-			FILE *stream = stdout;
-			int what_stream = to_what_stream(output_file, &stream, MSG);
-			if (what_stream == -1) {
-				continue;
-			}
-			getc(stdin);
-			sort_by_last_name(&students);
-			print_students(stream, &students);
-			//Сортировка по группе
-		} else if (string_cmp(command.arr, COMMAND[8]) || string_cmp(command.arr, "9\n")) {
-			// Куда выводить
-			FILE *stream = stdout;
-			int what_stream = to_what_stream(output_file, &stream, MSG);
-			if (what_stream == -1) {
-				continue;
-			}
-			getc(stdin);
-			sort_by_group(&students);
-			print_students(stream, &students);
-			//Фильтровка по среднему баллу
-		} else if (string_cmp(command.arr, COMMAND[9]) || string_cmp(command.arr, "10\n")) {
-			int n = find_good_students(output_file, &command, &students, MSG);
-			if (n == -1) {
-				continue;
-			}
-			if (n != 0) return n;
 		} else {
 			printf("%s", MSG[1]);
 		}
 	}
+
+	destroy_LinkedList(head);
+	destroy_LinkedList_with_special_node(special_stack);
 	destroy_string(&command);
-	fclose(output_file);
-	destroy_students(&students);
+	return 0;
 }
